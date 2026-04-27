@@ -8,8 +8,8 @@ load_dotenv()
 api = os.getenv("TMDB_API_KEY")
 
 def main():
-    url = "https://api.themoviedb.org/3/movie/top_rated"
-    payload = {"api_key": api, "query": "pixels"}
+    url = "https://api.themoviedb.org/3/search/movie?query=Jumanji"
+    payload = {"api_key": api}
 
     try:
         response = requests.get(url, payload)
@@ -18,15 +18,13 @@ def main():
         print("Could not complete request!")
         sys.exit()
         
-        
     o = response.json()
-    for movie in o:
-        print(movie)
+    movies = o["results"]
     
-    print("yeah!")
-    print(o)
-
-
+    if movies:
+        top_movie = movies[0]
+        print(top_movie["title"])
+        print(top_movie["vote_average"])
 
 
 if __name__ == "__main__":
