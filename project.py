@@ -22,7 +22,8 @@ def main():
     o = response.json()
     for movie in o:
         print(movie)
-        
+    
+    print("yeah!")
     print(o)
 
 
