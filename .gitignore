@@ -1,3 +1,9 @@
+# private key
 .env
+
+
 .venv
 .DS_Store
+
+# image
+poster.jpg
