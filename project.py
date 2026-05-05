@@ -26,29 +26,31 @@ def main():
 
         return
 
-    # 2. Figure out the movie (or handle the list/flags)
     movie = get_movie(args)
 
     if not movie:
         return
 
-    # 3. Fetch and draw the movie!
     response = get_movie_data(movie)
     top_movie = get_top_movie(response)
     poster_data = get_poster(top_movie)
 
+    # print movie title
     print(pyfiglet.figlet_format(top_movie["title"], font="Sub-Zero"))
 
     print("-" * 80)
 
     f = f"{top_movie['vote_average']} / 10"
+
+    # print movie rank
     print(pyfiglet.figlet_format(f, font="small"))
 
     if poster_data:
         save_poster(poster_data)
+
+        # print movie poster
         draw_poster(poster_data)
 
-    # --- NEW ADDITION ---
     print("\nWould you like to save this movie?")
     print("[1] Add to Watchlist")
     print("[2] Add to Hearts")
