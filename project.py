@@ -7,13 +7,13 @@ from PIL import Image, ImageEnhance
 import io
 import argparse
 import csv
+import pyfiglet
 
 load_dotenv()
 api = os.getenv("TMDB_API_KEY")
 
 
 def main():
-    # 1. Parse arguments
     args = parse_arguments()
 
     if args.m:
@@ -24,7 +24,7 @@ def main():
             print("Opening hearts...")
             handle_list("Hearts")
 
-        return  # Stop main() right here. We are done!
+        return
 
     # 2. Figure out the movie (or handle the list/flags)
     movie = get_movie(args)
@@ -37,12 +37,16 @@ def main():
     top_movie = get_top_movie(response)
     poster_data = get_poster(top_movie)
 
+    print(pyfiglet.figlet_format(top_movie["title"], font="Sub-Zero"))
+
+    print("-" * 80)
+
+    f = f"{top_movie['vote_average']} / 10"
+    print(pyfiglet.figlet_format(f, font="small"))
+
     if poster_data:
         save_poster(poster_data)
         draw_poster(poster_data)
-
-    print(top_movie["title"])
-    print(f"{top_movie['vote_average']} / 10")
 
     # --- NEW ADDITION ---
     print("\nWould you like to save this movie?")
@@ -62,7 +66,7 @@ def main():
 
 def handle_list(list_name):
     movies = []
-    filename = list_name + ".csv"
+    filename = list_name.lower() + ".csv"
 
     # 1. Safely try to open the specific file passed in
     try:
@@ -126,22 +130,15 @@ def save_to_csv(filename, movies):
 
 
 def get_movie(args):
-    """Handles the list flags or gets the movie title from the user."""
-    # 2. Check if they typed a movie in the command line
 
     if args.movie_words:
-        movie = " ".join(args.movie_words)
+        return " ".join(args.movie_words)
 
-    # 3. Fall back to asking them with input()
-    else:
-        movie = input("What's your fav movie? ").strip()
+    movie = input("What's your fav movie? ").strip()
 
-    # Catch empty inputs
     if not movie:
         print("You didn't enter a movie!")
         return None
-
-    # If we made it this far, return the actual movie string!
     return movie
 
 
@@ -179,8 +176,6 @@ def save_poster(content):
 
     with open(filename, "wb") as file:
         file.write(content)
-
-    print(f"Poster successfully saved")
 
 
 def get_poster(movie):
