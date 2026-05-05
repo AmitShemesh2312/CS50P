@@ -19,10 +19,10 @@ def main():
     if args.m:
         if args.m == "watchlist":
             print("Opening watchlist...")
-            open_watchlist()
-        elif args.m == "bookmarks":
-            print("Opening bookmarks...")
-            open_bookmarks()
+            handle_list("Watchlist")
+        elif args.m == "hearts":
+            print("Opening hearts...")
+            handle_list("Hearts")
 
         return  # Stop main() right here. We are done!
 
@@ -44,11 +44,85 @@ def main():
     print(top_movie["title"])
     print(f"{top_movie['vote_average']} / 10")
 
+    # --- NEW ADDITION ---
+    print("\nWould you like to save this movie?")
+    print("[1] Add to Watchlist")
+    print("[2] Add to Hearts")
+    print("[Enter] Skip and exit")
 
-def open_bookmarks(): ...
+    save_choice = input("> ").strip()
+
+    if save_choice == "1":
+        add_to_csv("watchlist.csv", top_movie["title"])
+        print(f"Added '{top_movie['title']}' to your Watchlist!")
+    elif save_choice == "2":
+        add_to_csv("hearts.csv", top_movie["title"])
+        print(f"Added '{top_movie['title']}' to your Hearts!")
 
 
-def open_watchlist(): ...
+def handle_list(list_name):
+    movies = []
+    filename = list_name + ".csv"
+
+    # 1. Safely try to open the specific file passed in
+    try:
+        with open(filename, "r") as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                movies.append(row)
+    except FileNotFoundError:
+        # If the file doesn't exist yet, we just catch the error and do nothing!
+        pass
+
+    # 2. Check if the list is empty
+    if not movies:
+        print(f"\nYour {list_name} is currently empty!")
+        return  # Stop the function right here
+
+    # 3. Print the movies using the list_name in the header
+    print(f"\n--- YOUR {list_name.upper()} ---")
+    for index, movie in enumerate(movies):
+        print(f"[{index + 1}] {movie['title']}")
+
+    # 4. Ask the user what they want to do
+    print("\nOptions: Type a number to remove a movie, or press Enter to go back.")
+    choice = input("> ").strip()
+
+    if choice.isdigit():
+        index_to_remove = int(choice) - 1
+
+        if 0 <= index_to_remove < len(movies):
+            removed_movie = movies.pop(index_to_remove)
+            print(f"Removed '{removed_movie['title']}' from your {list_name}.")
+            # Save the updated list back to the correct file
+            save_to_csv(filename, movies)
+        else:
+            print("Invalid number!")
+
+
+def add_to_csv(filename, movie_title):
+    """Appends a single movie to the specified CSV file."""
+
+    # Check if the file already exists before we open it
+    file_exists = os.path.isfile(filename)
+
+    # Open in "a" (append) mode so we add to the bottom of the file
+    with open(filename, "a", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=["title"])
+
+        # If it is a brand new file, write the header first
+        if not file_exists:
+            writer.writeheader()
+
+        # Write the new movie row
+        writer.writerow({"title": movie_title})
+
+
+def save_to_csv(filename, movies):
+    with open(filename, "w", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=["title"])
+        writer.writeheader()
+        writer.writerows(movies)
 
 
 def get_movie(args):
@@ -75,7 +149,7 @@ def parse_arguments():
     """Handles all command-line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-m", choices=["watchlist", "bookmarks"], help="View your lists or bookmarks"
+        "-m", choices=["watchlist", "hearts"], help="View your lists or hearts"
     )
     parser.add_argument(
         "movie_words", nargs="*", help="The name of the movie to search for"
