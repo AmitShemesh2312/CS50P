@@ -14,8 +14,30 @@ api = os.getenv("TMDB_API_KEY")
 
 
 def main():
+    # getting command line argument as args
     args = parse_arguments()
 
+    if check_args(args):
+        return
+
+    movie = get_movie(args)
+
+    if not movie:
+        print("No movie specified")
+        return
+
+    response = get_movie_data(movie)
+    top_movie = get_top_movie(response)
+    poster_data = get_poster(top_movie)
+
+    display_movie(top_movie, poster_data)
+
+    user_choice = decision()
+
+    add_choice_list(user_choice, top_movie)
+
+
+def check_args(args):
     if args.m:
         if args.m == "watchlist":
             print("Opening watchlist...")
@@ -23,48 +45,59 @@ def main():
         elif args.m == "hearts":
             print("Opening hearts...")
             handle_list("Hearts")
+        return True
+    return False
 
-        return
 
-    movie = get_movie(args)
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-m", choices=["watchlist", "hearts"], help="View your watchlist or hearts"
+    )
+    parser.add_argument("movie_words", nargs="*", help="The name of the movie")
+    args = parser.parse_args()
 
-    if not movie:
-        return
+    if args.m and args.movie_words:
+        parser.error("You cannot search for a movie and view a list at the same time!")
 
-    response = get_movie_data(movie)
-    top_movie = get_top_movie(response)
-    poster_data = get_poster(top_movie)
+    return args
 
-    # print movie title
-    print(pyfiglet.figlet_format(top_movie["title"], font="Sub-Zero"))
 
-    print("-" * 80)
+def add_choice_list(choice, movie):
+    if choice == "1":
+        if add_to_csv("watchlist.csv", movie["title"]):
+            print(f"Added '{movie['title']}' to your Watchlist!")
+        else:
+            print(f"'{movie["title"]}' is already in your Watchlist!")
+    elif choice == "2":
+        if add_to_csv("hearts.csv", movie["title"]):
+            print(f"Added '{movie['title']}' to your Hearts!")
+        else:
+            print(f"'{movie["title"]}' is already in your Hearts!")
 
-    f = f"{top_movie['vote_average']} / 10"
-    print(pyfiglet.figlet_format(f, font="small"))
 
-    if poster_data:
-        save_poster(poster_data)
-        draw_poster(poster_data)
-
+def decision():
     print()
     print("Would you like to save this movie?")
     print("[1] Add to Watchlist")
     print("[2] Add to Hearts")
     print("[Enter] Skip and exit")
 
-    save_choice = input("> ").strip()
+    return input("> ").strip()
 
-    if save_choice == "1":
-        if add_to_csv("watchlist.csv", top_movie["title"]):
-            print(f"Added '{top_movie['title']}' to your Watchlist!")
-        else:
-            print(f"'{top_movie["title"]}' is already in your Watchlist!")
-    elif save_choice == "2":
-        if add_to_csv("hearts.csv", top_movie["title"]):
-            print(f"Added '{top_movie['title']}' to your Hearts!")
-        else:
-            print(f"'{top_movie["title"]}' is already in your Hearts!")
+
+def display_movie(movie, poster):
+    # print movie
+    print(pyfiglet.figlet_format(movie["title"], font="Sub-Zero", width=150))
+
+    print("-" * 80)
+
+    f = f"{movie['vote_average']:.1f} / 10"
+    print(pyfiglet.figlet_format(f, font="small"))
+
+    if poster:
+        save_poster(poster)
+        draw_poster(poster)
 
 
 def handle_list(list_name):
@@ -143,24 +176,8 @@ def get_movie(args):
     movie = input("What's your fav movie? ").strip()
 
     if not movie:
-        print("You didn't enter a movie!")
         return None
     return movie
-
-
-def parse_arguments():
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-m", choices=["watchlist", "hearts"], help="View your watchlist or hearts"
-    )
-    parser.add_argument("movie_words", nargs="*", help="The name of the movie")
-    args = parser.parse_args()
-
-    if args.m and args.movie_words:
-        parser.error("You cannot search for a movie and view a list at the same time!")
-
-    return args
 
 
 def draw_poster(content):
