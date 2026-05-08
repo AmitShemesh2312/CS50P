@@ -9,7 +9,10 @@ import argparse
 import csv
 import pyfiglet
 
+# getting the .env key
 load_dotenv()
+
+# stroring the .env key in 'api' variable
 api = os.getenv("TMDB_API_KEY")
 
 
@@ -17,39 +20,58 @@ def main():
     # getting command line argument as args
     args = parse_arguments()
 
-    if check_args(args):
-        return
+    # checking if there is a command (-m)
+    if check_command_args(args):
 
+        # openning the list
+        movie_list = show_list(args.m)
+
+        # checking if user wants to remove a movie
+        remove_movie(movie_list, args.m)
+        return None
+
+    # getting movie name as a string
     movie = get_movie(args)
 
+    # if movie is blank, user didn't write a movie, exiting program
     if not movie:
         print("No movie specified")
-        return
+        return None
 
+    # get dict response for found movies
     response = get_movie_data(movie)
-    top_movie = get_top_movie(response)
+
+    try:
+        # trying to get the top result out of the movies dict
+        top_movie = get_top_movie(response)
+    except NameError:
+        print("no movies found with that name")
+        return None
+
+    # getting poster binary data if there is
     poster_data = get_poster(top_movie)
 
+    # printing movie details
     display_movie(top_movie, poster_data)
 
-    user_choice = decision()
+    # if the user chose to save the movie
+    save_movie = decision()
 
-    add_choice_list(user_choice, top_movie)
-
-
-def check_args(args):
-    if args.m:
-        if args.m == "watchlist":
-            print("Opening watchlist...")
-            handle_list("Watchlist")
-        elif args.m == "hearts":
-            print("Opening hearts...")
-            handle_list("Hearts")
-        return True
-    return False
+    # saves the movie
+    add_choice_list(save_movie, top_movie)
 
 
-def parse_arguments():
+def check_command_args(args) -> bool:
+    # checking if user specify command
+
+    modes = ["watchlist", "hearts"]
+    return args.m in modes
+
+
+def parse_arguments() -> argparse.Namespace:
+    # checking if user specify movie or command
+    # returning args object
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-m", choices=["watchlist", "hearts"], help="View your watchlist or hearts"
@@ -64,6 +86,8 @@ def parse_arguments():
 
 
 def add_choice_list(choice, movie):
+    # saving the movie to the chosen list
+
     if choice == "1":
         if add_to_csv("watchlist.csv", movie["title"]):
             print(f"Added '{movie['title']}' to your Watchlist!")
@@ -77,6 +101,8 @@ def add_choice_list(choice, movie):
 
 
 def decision():
+    # check if user want to save the movie
+
     print()
     print("Would you like to save this movie?")
     print("[1] Add to Watchlist")
@@ -87,40 +113,54 @@ def decision():
 
 
 def display_movie(movie, poster):
-    # print movie
+    # print movie details
+
+    # print movie name
     print(pyfiglet.figlet_format(movie["title"], font="Sub-Zero", width=150))
 
     print("-" * 80)
 
     f = f"{movie['vote_average']:.1f} / 10"
+
+    # printing movie rank
     print(pyfiglet.figlet_format(f, font="small"))
 
     if poster:
+        # save poster to poster.jpg
         save_poster(poster)
+        # print poster
         draw_poster(poster)
 
 
-def handle_list(list_name):
+def show_list(list_name) -> list[dict] | None:
+    # displaying the provided list
+    file_name = list_name + ".csv"
     movies = []
-    filename = list_name.lower() + ".csv"
 
     try:
-        with open(filename, "r") as file:
+        with open(file_name, "r") as file:
             reader = csv.DictReader(file)
             for row in reader:
                 movies.append(row)
     except FileNotFoundError:
         pass
 
-    if not movies:
-        print()
-        print(f"Your {list_name} is currently empty!")
-        return
-
     print()
-    print(f"--- YOUR {list_name.upper()} ---")
-    for index, movie in enumerate(movies):
-        print(f"[{index + 1}] {movie['title']}")
+
+    if not movies:
+        print(f"{list_name} is currently empty!")
+        return None
+
+    else:
+        print(f"--- YOUR {list_name.upper()} ---")
+        for index, movie in enumerate(movies):
+            print(f"[{index + 1}] {movie['title']}")
+
+        return movies
+
+
+def remove_movie(movie_list, file_name):
+    # asks the user if he want to remove a movie from the list, and removes it
 
     print()
     print("Options: Type a number to remove a movie, or press Enter to go back")
@@ -129,16 +169,17 @@ def handle_list(list_name):
     if choice.isdigit():
         index_to_remove = int(choice) - 1
 
-        if 0 <= index_to_remove < len(movies):
-            removed_movie = movies.pop(index_to_remove)
-            print(f"Removed '{removed_movie['title']}' from your {list_name}.")
+        if 0 <= index_to_remove < len(movie_list):
+            removed_movie = movie_list.pop(index_to_remove)
+            print(f"Removed '{removed_movie['title']}' from {movie_list}")
 
-            save_to_csv(filename, movies)
+            save_to_csv(file_name, movie_list)
         else:
             print("Invalid number!")
 
 
 def add_to_csv(filename, movie_title) -> bool:
+    # adds the movie to the chosen csv and returning if movie added
 
     if os.path.isfile(filename):
         with open(filename, "r", newline="") as file:
@@ -163,6 +204,8 @@ def add_to_csv(filename, movie_title) -> bool:
 
 
 def save_to_csv(filename, movies):
+    # saves the list of movies to the csv
+
     with open(filename, "w", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=["title"])
         writer.writeheader()
@@ -170,6 +213,7 @@ def save_to_csv(filename, movies):
 
 
 def get_movie(args):
+    # getting movie name from command line arguments or user input
     if args.movie_words:
         return " ".join(args.movie_words)
 
@@ -181,17 +225,26 @@ def get_movie(args):
 
 
 def draw_poster(content):
+    # draws the poster on the terminal from binary data, using io, pillow and ascii-art
+
+    # transorming binary data to file like object - pillow needs a file to read, not a binary
     image_file = io.BytesIO(content)
+
     img = Image.open(image_file)
 
+    # enhance the poster to make it more prominent
     enhancer = ImageEnhance.Contrast(img)
     img = enhancer.enhance(1.5)
 
+    # making the image ascii-art object
     art = AsciiArt(img)
+
+    # draw the image on the terminal
     art.to_terminal(columns=80)
 
 
 def save_poster(content):
+    # saves the poster to poster.jpg file (for comparing)
     filename = "poster.jpg"
 
     with open(filename, "wb") as file:
@@ -199,6 +252,8 @@ def save_poster(content):
 
 
 def get_poster(movie):
+    # extracting the binary poster data if there is
+
     poster_url = "https://image.tmdb.org/t/p/"
     path = movie.get("poster_path")
 
@@ -220,6 +275,7 @@ def get_poster(movie):
 
 
 def get_top_movie(response):
+    # from the dict of movies returns the top movie
     movies = response["results"]
     if not movies:
         raise NameError("movie not found!")
@@ -227,6 +283,7 @@ def get_top_movie(response):
 
 
 def get_movie_data(movie):
+    # getting response of movies that were found via TMDB API
 
     url = "https://api.themoviedb.org/3/search/movie"
     params = {"api_key": api, "query": movie}
