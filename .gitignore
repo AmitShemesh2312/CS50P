@@ -13,3 +13,7 @@ __pycache__/
 
 # Pytest
 .pytest_cache/
+
+# CSVs
+hearts.csv
+watchlist.csv
