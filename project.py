@@ -100,7 +100,7 @@ def add_choice_list(choice, movie):
             print(f"'{movie["title"]}' is already in your Hearts!")
 
 
-def decision():
+def decision() -> str:
     # check if user want to save the movie
 
     print()
@@ -190,7 +190,6 @@ def add_to_csv(filename, movie_title) -> bool:
                 if row["title"].lower() == movie_title.lower():
                     print()
                     return False
-
     file_exists = os.path.isfile(filename)
 
     with open(filename, "a", newline="") as file:
@@ -212,7 +211,7 @@ def save_to_csv(filename, movies):
         writer.writerows(movies)
 
 
-def get_movie(args):
+def get_movie(args) -> str | None:
     # getting movie name from command line arguments or user input
     if args.movie_words:
         return " ".join(args.movie_words)
@@ -251,7 +250,7 @@ def save_poster(content):
         file.write(content)
 
 
-def get_poster(movie):
+def get_poster(movie) -> bytes | None:
     # extracting the binary poster data if there is
 
     poster_url = "https://image.tmdb.org/t/p/"
@@ -274,7 +273,7 @@ def get_poster(movie):
         return None
 
 
-def get_top_movie(response):
+def get_top_movie(response) -> dict:
     # from the dict of movies returns the top movie
     movies = response["results"]
     if not movies:
@@ -282,7 +281,7 @@ def get_top_movie(response):
     return movies[0]
 
 
-def get_movie_data(movie):
+def get_movie_data(movie) -> dict:
     # getting response of movies that were found via TMDB API
 
     url = "https://api.themoviedb.org/3/search/movie"
