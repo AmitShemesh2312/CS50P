@@ -7,3 +7,9 @@
 
 # image
 poster.jpg
+
+# Python bytecode
+__pycache__/
+
+# Pytest
+.pytest_cache/

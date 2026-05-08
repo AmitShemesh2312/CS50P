@@ -2,3 +2,4 @@ python-dotenv
 requests
 ascii-magic
 pillow
+pyfiglet

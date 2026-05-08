@@ -10,7 +10,7 @@ parser.add_argument("movie_words", nargs="*", help="The name of the movie")
 args = parser.parse_args(["pirates", "of", "the", "caribbean"])
 
 
-def test_check_args():
+def test_check_command_args():
     assert check_command_args(args) == False
 
 
