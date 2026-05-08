@@ -161,7 +161,7 @@ def show_list(list_name) -> list[dict] | None:
 
 def remove_movie(movie_list, file_name):
     # asks the user if he want to remove a movie from the list, and removes it
-
+    file_name = file_name + ".csv"
     print()
     print("Options: Type a number to remove a movie, or press Enter to go back")
     choice = input("> ").strip()
@@ -171,7 +171,7 @@ def remove_movie(movie_list, file_name):
 
         if 0 <= index_to_remove < len(movie_list):
             removed_movie = movie_list.pop(index_to_remove)
-            print(f"Removed '{removed_movie['title']}' from {movie_list}")
+            print(f"Removed '{removed_movie['title']}' from {file_name}")
 
             save_to_csv(file_name, movie_list)
         else:
